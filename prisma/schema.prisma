@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
+  password    String
+  name        String?
+  avatarUrl   String?      @map("avatar_url")
+  role        String       @default("USER")
+  status      String       @default("active")
+  goals       Goal[]
+  conferences Conference[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Goal {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  status      String   @default("pending") // pending, completed
+  dueDate     DateTime? @map("due_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("goals")
+}
+
+model Library {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  type         String   // pdf, audio, video
+  url          String
+  thumbnailUrl String?  @map("thumbnail_url")
+  category     String?  @default("premium") // premium, workshop, etc.
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("library")
+}
+
+model Conference {
+  id        Int      @id @default(autoincrement())
+  title     String
+  roomId    String   @map("room_id")
+  videoUrl  String?  @map("video_url")
+  userId    Int?     @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("conferences")
+}
