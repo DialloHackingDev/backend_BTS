@@ -63,7 +63,15 @@ exports.uploadAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'Aucune image fournie.' });
     }
-    const avatarUrl = `/uploads/${req.file.filename}`;
+
+    const { uploadToStorage } = require('../config/supabaseStorage');
+    const avatarUrl = await uploadToStorage(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      'avatars'
+    );
+
     const user = await prisma.user.update({
       where: { id: req.user.userId },
       data: { avatarUrl },

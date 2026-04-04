@@ -1,26 +1,19 @@
 const multer = require('multer');
 const path = require('path');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// memoryStorage : fichier en mémoire (buffer) pour l'envoyer à Firebase
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   console.log('Upload reçu - mimetype:', file.mimetype, '| originalname:', file.originalname);
   const allowedTypes = [
     'application/pdf',
-    'audio/mpeg', 'audio/wav',
+    'audio/mpeg', 'audio/wav', 'audio/mp3',
     'video/mp4',
     'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'
   ];
   const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf', '.mp3', '.wav', '.mp4'];
-  const ext = require('path').extname(file.originalname).toLowerCase();
+  const ext = path.extname(file.originalname).toLowerCase();
 
   if (allowedTypes.includes(file.mimetype) || allowedExts.includes(ext)) {
     cb(null, true);
@@ -32,7 +25,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }
+  limits: { fileSize: 100 * 1024 * 1024 } // 100 Mo
 });
 
 module.exports = upload;
