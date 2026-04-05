@@ -49,13 +49,40 @@ model Library {
 }
 
 model Conference {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
-  roomId    String   @map("room_id")
-  videoUrl  String?  @map("video_url")
-  userId    Int?     @map("user_id")
-  user      User?    @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now()) @map("created_at")
+  roomId    String    @map("room_id")
+  videoUrl  String?   @map("video_url")
+  userId    Int?      @map("user_id")
+  user      User?     @relation(fields: [userId], references: [id])
+  endedAt   DateTime? @map("ended_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   @@map("conferences")
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  type        String    @default("general") // general, reunion, formation, conference
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime  @map("end_date")
+  conferenceId Int?     @map("conference_id")
+  createdBy   Int       @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("events")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  sentBy    Int      @map("sent_by")
+  targetAll Boolean  @default(true) @map("target_all")
+  targetIds String?  @map("target_ids") // JSON array of user IDs
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
 }

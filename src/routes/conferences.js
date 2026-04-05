@@ -5,10 +5,11 @@ const verifyToken = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Récupérer toutes les conférences (historique complet)
+// Sessions actives (non terminées)
 router.get('/active', verifyToken, async (req, res) => {
   try {
     const conferences = await prisma.conference.findMany({
+      where: { endedAt: null },
       include: { user: { select: { name: true } } },
       orderBy: { createdAt: 'desc' }
     });
@@ -59,18 +60,21 @@ router.put('/:id/end', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { videoUrl } = req.body;
   try {
+    // Marquer comme terminée
     const conference = await prisma.conference.update({
       where: { id: parseInt(id) },
-      data: { videoUrl: videoUrl || null }
+      data: {
+        videoUrl: videoUrl || null,
+        endedAt: new Date(),
+      }
     });
 
-    // Si un lien vidéo est fourni, on l'ajoute automatiquement à la bibliothèque
+    // Si un lien vidéo est fourni, l'ajouter à la bibliothèque
     if (videoUrl && videoUrl.trim()) {
       const dateStr = new Date(conference.createdAt).toLocaleDateString('fr-FR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
       });
-      // Vérifier si une entrée existe déjà pour cette conférence
       const existing = await prisma.library.findFirst({
         where: { description: `conference:${conference.id}` }
       });

@@ -47,7 +47,24 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // Modifier un objectif
-router.put('/:id', verifyToken, );
+router.put('/:id', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const { title, description, status, dueDate } = req.body;
+  try {
+    const goal = await prisma.goal.update({
+      where: { id: parseInt(id) },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(description !== undefined && { description }),
+        ...(status !== undefined && { status }),
+        ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
+      }
+    });
+    res.json(goal);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 // Supprimer un objectif
 router.delete('/:id', verifyToken, async (req, res) => {

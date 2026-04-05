@@ -13,6 +13,8 @@ const dashboardRouter = require('./src/routes/dashboard');
 const authRouter = require('./src/routes/auth');
 const adminRouter = require('./src/routes/admin');
 const profileRouter = require('./src/routes/profile');
+const eventsRouter = require('./src/routes/events');
+const notificationsRouter = require('./src/routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +33,9 @@ app.use('/dashboard', dashboardRouter);
 app.use('/auth', authRouter);
 app.use('/admin', adminRouter);
 app.use('/profile', profileRouter);
+app.use('/events', eventsRouter);
+app.use('/notifications', notificationsRouter);
+app.use('/agora', require('./src/routes/agora'));
 
 // Public routes
 app.get('/', (req, res) => {
