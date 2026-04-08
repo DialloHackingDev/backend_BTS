@@ -1,6 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const verifyToken = require('../middleware/auth');
+const { createGoalValidator, updateGoalValidator, goalIdValidator } = require('../middleware/validators');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -28,8 +29,8 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-// Ajouter un objectif
-router.post('/', verifyToken, async (req, res) => {
+// Ajouter un objectif (avec validation)
+router.post('/', verifyToken, createGoalValidator, async (req, res) => {
   const { title, description, dueDate } = req.body;
   try {
     const goal = await prisma.goal.create({
@@ -46,8 +47,8 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
-// Modifier un objectif
-router.put('/:id', verifyToken, async (req, res) => {
+// Modifier un objectif (avec validation)
+router.put('/:id', verifyToken, updateGoalValidator, async (req, res) => {
   const { id } = req.params;
   const { title, description, status, dueDate } = req.body;
   try {
@@ -66,8 +67,8 @@ router.put('/:id', verifyToken, async (req, res) => {
   }
 });
 
-// Supprimer un objectif
-router.delete('/:id', verifyToken, async (req, res) => {
+// Supprimer un objectif (avec validation ID)
+router.delete('/:id', verifyToken, goalIdValidator, async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.goal.delete({
