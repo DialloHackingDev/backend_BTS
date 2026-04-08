@@ -132,7 +132,7 @@ const sanitizeInput = (req, res, next) => {
     if (typeof obj === 'object' && obj !== null) {
       const sanitized = Array.isArray(obj) ? [] : {};
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
           sanitized[key] = sanitize(obj[key]);
         }
       }

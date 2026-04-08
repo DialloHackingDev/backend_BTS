@@ -29,10 +29,7 @@ const registerValidator = [
   body('password')
     .notEmpty().withMessage('Mot de passe requis')
     .isLength({ min: 6 }).withMessage('Mot de passe trop court (min 6 caractères)')
-    .isLength({ max: 128 }).withMessage('Mot de passe trop long (max 128 caractères)')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage(
-      'Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre'
-    ),
+    .isLength({ max: 128 }).withMessage('Mot de passe trop long (max 128 caractères)'),
   
   body('name')
     .trim()
