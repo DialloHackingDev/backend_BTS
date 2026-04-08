@@ -126,11 +126,10 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(health);
 });
 
-// Port listening (Version pour développement mobile)
+// Port listening
 const server = app.listen(PORT, '0.0.0.0', () => {
-    logger.info(`Server is starting on http://0.0.0.0:${PORT}`);
-    logger.info(`Mobile access: http://192.168.1.107:${PORT}`);
-    logger.info(`Health check: http://0.0.0.0:${PORT}/health`);
+    logger.info(`🚀 Server running on port ${PORT}`);
+    logger.info(`Health check: /health`);
     
     // Vérification de la base de données en arrière-plan
     prisma.$connect()
