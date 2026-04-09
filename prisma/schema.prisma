@@ -49,14 +49,21 @@ model Library {
 }
 
 model Conference {
-  id        Int       @id @default(autoincrement())
-  title     String
-  roomId    String    @map("room_id")
-  videoUrl  String?   @map("video_url")
-  userId    Int?      @map("user_id")
-  user      User?     @relation(fields: [userId], references: [id])
-  endedAt   DateTime? @map("ended_at")
-  createdAt DateTime  @default(now()) @map("created_at")
+  id                   Int       @id @default(autoincrement())
+  title                String
+  roomId               String    @map("room_id")
+  videoUrl             String?   @map("video_url")
+  userId               Int?      @map("user_id")
+  user                 User?     @relation(fields: [userId], references: [id])
+  endedAt              DateTime? @map("ended_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  // Champs d'enregistrement Agora Cloud Recording
+  isRecording          Boolean   @default(false) @map("is_recording")
+  recordingResourceId  String?   @map("recording_resource_id")
+  recordingSid         String?   @map("recording_sid")
+  recordingUid         Int?      @map("recording_uid")
+  recordingStoppedAt   DateTime? @map("recording_stopped_at")
 
   @@map("conferences")
 }
