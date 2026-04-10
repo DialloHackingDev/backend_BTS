@@ -37,6 +37,97 @@ router.get('/stats', adminController.getStats);
 router.get('/engagement', adminController.getEngagementData);
 router.get('/portfolio', adminController.getContentPortfolio);
 
+// Dashboard complet - toutes les stats en une requête
+router.get('/dashboard', async (req, res) => {
+  try {
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    // ─── STATISTIQUES GÉNÉRALES ───
+    const [
+      totalUsers,
+      totalLibraryItems,
+      totalConferences,
+      activeConferences,
+      totalGoals,
+      totalEvents
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.library.count(),
+      prisma.conference.count(),
+      prisma.conference.count({ where: { status: 'ACTIVE' } }),
+      prisma.goal.count(),
+      prisma.event.count()
+    ]);
+    
+    // ─── UTILISATEURS PAR RÔLE ───
+    const [adminCount, userCount] = await Promise.all([
+      prisma.user.count({ where: { role: { equals: 'ADMIN', mode: 'insensitive' } } }),
+      prisma.user.count({ where: { role: { equals: 'USER', mode: 'insensitive' } } })
+    ]);
+    
+    // ─── NOUVEAUX UTILISATEURS ───
+    const newUsersThisMonth = await prisma.user.count({
+      where: { createdAt: { gte: oneMonthAgo } }
+    });
+    const newUsersThisWeek = await prisma.user.count({
+      where: { createdAt: { gte: oneWeekAgo } }
+    });
+    
+    // ─── ACTIVITÉ RÉCENTE ───
+    const recentConferences = await prisma.conference.findMany({
+      where: { createdAt: { gte: oneWeekAgo } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: { user: { select: { name: true, email: true } } }
+    });
+    
+    // ─── CONTENU PAR TYPE ───
+    const contentByType = await prisma.library.groupBy({
+      by: ['type'],
+      _count: { id: true }
+    });
+    
+    // ─── ENGAGEMENT (likes/views si disponibles) ───
+    const totalLikes = await prisma.library.aggregate({
+      _sum: { likes: true }
+    });
+    
+    res.json({
+      overview: {
+        totalUsers,
+        totalLibraryItems,
+        totalConferences,
+        activeConferences,
+        totalGoals,
+        totalEvents
+      },
+      users: {
+        total: totalUsers,
+        admins: adminCount,
+        regularUsers: userCount,
+        newThisMonth: newUsersThisMonth,
+        newThisWeek: newUsersThisWeek
+      },
+      content: {
+        byType: contentByType,
+        totalLikes: totalLikes._sum.likes || 0
+      },
+      recentActivity: {
+        conferences: recentConferences
+      },
+      health: {
+        status: 'healthy',
+        lastUpdate: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
 // ── CRUD Utilisateurs ──────────────────────────────────────
 router.get('/users', adminController.getAllUsers);
 router.post('/users', adminController.createUser);
