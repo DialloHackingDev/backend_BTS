@@ -33,16 +33,9 @@ exports.getStats = async (req, res) => {
       where: { createdAt: { gte: oneMonthAgo } }
     });
     
-    // Calcul du total des téléchargements (simulé basé sur les likes/interactions)
-    const totalDownloads = await prisma.library.aggregate({
-      _sum: { likes: true }
-    });
-    const downloadsLastMonth = await prisma.library.aggregate({
-      where: { createdAt: { gte: oneMonthAgo } },
-      _sum: { likes: true }
-    });
-    const totalDownloadsValue = totalDownloads._sum.likes || 0;
-    const lastMonthDownloads = downloadsLastMonth._sum.likes || 0;
+    // Calcul du total des téléchargements (simulé basé sur le nombre de contenus)
+    const totalDownloadsValue = totalLibraryItems * 3; // Estimation: 3 téléchargements par contenu
+    const lastMonthDownloads = newContents * 2; // Estimation: 2 téléchargements par nouveau contenu
     
     // Heures de conférence estimées (10 minutes par conférence en moyenne)
     const conferenceMinutes = totalConferences * 10;
