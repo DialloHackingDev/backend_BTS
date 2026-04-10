@@ -7,6 +7,24 @@ const agoraRecording = require('../services/agoraRecording');
 const prisma = new PrismaClient();
 
 /**
+ * Vérifier la configuration Agora
+ * GET /agora/status
+ */
+router.get('/status', (req, res) => {
+  const isConfigured = agoraRecording.isConfigured();
+  res.json({
+    configured: isConfigured,
+    appId: agoraRecording.appId ? '✅ Configuré' : '❌ Manquant',
+    appCertificate: agoraRecording.appCertificate ? '✅ Configuré' : '❌ Manquant',
+    customerId: agoraRecording.customerId ? '✅ Configuré' : '❌ Manquant',
+    customerSecret: agoraRecording.customerSecret ? '✅ Configuré' : '❌ Manquant',
+    message: isConfigured 
+      ? 'Agora Cloud Recording est prêt' 
+      : 'Configuration incomplète - Les enregistrements ne fonctionneront pas'
+  });
+});
+
+/**
  * Démarrer l'enregistrement d'une conférence
  * POST /agora/recording/start
  */

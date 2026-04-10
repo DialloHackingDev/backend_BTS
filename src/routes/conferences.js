@@ -8,7 +8,10 @@ const prisma = new PrismaClient();
 // Sessions actives (non terminées)
 router.get('/active', verifyToken, async (req, res) => {
   try {
-    console.log(`[Conferences] Fetching active conferences for user: ${req.user.userId}`);
+    console.log(`[Conferences] Fetching active conferences for user: ${req.user?.userId || 'unknown'}`);
+    
+    // Test DB connection first
+    await prisma.$queryRaw`SELECT 1`;
     
     const conferences = await prisma.conference.findMany({
       where: { endedAt: null },
@@ -20,7 +23,14 @@ router.get('/active', verifyToken, async (req, res) => {
     res.json(conferences);
   } catch (error) {
     console.error(`[Conferences] Error fetching active:`, error);
-    res.status(500).json({ error: error.message, stack: error.stack });
+    console.error(`[Conferences] Error code:`, error.code);
+    console.error(`[Conferences] Error meta:`, error.meta);
+    res.status(500).json({ 
+      error: 'Database error', 
+      message: error.message,
+      code: error.code,
+      hint: 'Vérifiez que les migrations sont appliquées'
+    });
   }
 });
 

@@ -128,6 +128,28 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(health);
 });
 
+/// Debug: Vérifier le schéma de la table conferences
+app.get('/debug/conferences-schema', async (req, res) => {
+  try {
+    const columns = await prisma.$queryRaw`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'conferences'
+      ORDER BY ordinal_position;
+    `;
+    res.json({ 
+      table: 'conferences',
+      columns,
+      expectedColumns: [
+        'id', 'title', 'room_id', 'video_url', 'user_id', 'ended_at', 'created_at',
+        'is_recording', 'recording_resource_id', 'recording_sid', 'recording_uid', 'recording_stopped_at'
+      ]
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Port listening
 const server = app.listen(PORT, '0.0.0.0', () => {
     logger.info(`🚀 Server running on port ${PORT}`);
