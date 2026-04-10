@@ -8,14 +8,19 @@ const prisma = new PrismaClient();
 // Sessions actives (non terminées)
 router.get('/active', verifyToken, async (req, res) => {
   try {
+    console.log(`[Conferences] Fetching active conferences for user: ${req.user.userId}`);
+    
     const conferences = await prisma.conference.findMany({
       where: { endedAt: null },
       include: { user: { select: { name: true } } },
       orderBy: { createdAt: 'desc' }
     });
+    
+    console.log(`[Conferences] Found ${conferences.length} active conferences`);
     res.json(conferences);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(`[Conferences] Error fetching active:`, error);
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
@@ -28,6 +33,8 @@ router.get('/history', verifyToken, async (req, res) => {
     const skip = (page - 1) * limit;
     let dateFilter = {};
 
+    console.log(`[Conferences] Fetching history with filter: ${filter}, page: ${page}`);
+
     if (filter === 'week') {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -37,6 +44,8 @@ router.get('/history', verifyToken, async (req, res) => {
       monthAgo.setMonth(monthAgo.getMonth() - 1);
       dateFilter = { createdAt: { gte: monthAgo } };
     }
+
+    console.log(`[Conferences] Date filter:`, dateFilter);
 
     const [conferences, total] = await Promise.all([
       prisma.conference.findMany({
@@ -49,9 +58,11 @@ router.get('/history', verifyToken, async (req, res) => {
       prisma.conference.count({ where: dateFilter })
     ]);
 
+    console.log(`[Conferences] Found ${conferences.length} conferences, total: ${total}`);
     res.json({ data: conferences, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(`[Conferences] Error fetching history:`, error);
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
@@ -127,18 +138,25 @@ router.delete('/:id/video', verifyToken, async (req, res) => {
 // Créer une nouvelle salle de conférence (tous les utilisateurs connectés)
 router.post('/', verifyToken, async (req, res) => {
   const { title } = req.body;
+  console.log(`[Conferences] Creating conference - user: ${req.user.userId}, title: ${title}`);
+  
   try {
+    const roomId = `bts-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[Conferences] Generated roomId: ${roomId}`);
+    
     const conference = await prisma.conference.create({
       data: {
         title: title || 'Salle BTS',
-        roomId: `bts-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        roomId: roomId,
         userId: req.user.userId
       }
     });
 
+    console.log(`[Conferences] Created conference: ${conference.id}`);
     res.status(201).json(conference);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(`[Conferences] Error creating conference:`, error);
+    res.status(400).json({ error: error.message, stack: error.stack });
   }
 });
 

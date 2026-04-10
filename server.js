@@ -25,6 +25,7 @@ const dashboardRouter = require('./src/routes/dashboard');
 const authRouter = require('./src/routes/auth');
 const adminRouter = require('./src/routes/admin');
 const profileRouter = require('./src/routes/profile');
+const fixRoleRouter = require('./src/routes/fix-role');
 const eventsRouter = require('./src/routes/events');
 const notificationsRouter = require('./src/routes/notifications');
 
@@ -58,6 +59,7 @@ app.use('/conferences', conferenceRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/admin', adminRouter);
 app.use('/profile', profileRouter);
+app.use('/fix-role', fixRoleRouter); // Route temporaire pour fixer les rôles
 app.use('/events', eventsRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/agora', require('./src/routes/agora'));
