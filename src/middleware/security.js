@@ -6,13 +6,15 @@ const helmet = require('helmet');
 /// Limiter général pour toutes les routes
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requêtes par IP
+  max: 500, // 500 requêtes par IP (augmenté pour éviter les blocages)
   message: {
     error: 'Trop de requêtes, veuillez réessayer plus tard',
     retryAfter: '15 minutes',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Ignorer les erreurs de store (Redis non configuré)
+  skip: (req, res) => false,
 });
 
 /// Limiter strict pour les routes d'authentification

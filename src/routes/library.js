@@ -1,11 +1,21 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
+const rateLimit = require('express-rate-limit');
 const verifyToken = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { uploadToStorage, deleteFromStorage } = require('../config/supabaseStorage');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Rate limiter spécifique pour l'upload (10 uploads par heure)
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 heure
+  max: 10, // 10 uploads max par heure
+  message: {
+    error: 'Quota d\'upload atteint, veuillez réessayer plus tard',
+  },
+});
 
 // Récupérer tous les contenus avec pagination
 router.get('/', verifyToken, async (req, res) => {
@@ -25,8 +35,8 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-// Upload vers Firebase Storage
-router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
+// Upload vers Firebase Storage - AVEC rate limiting
+router.post('/upload', uploadLimiter, verifyToken, upload.single('file'), async (req, res) => {
   const { title } = req.body;
 
   if (!req.file) {

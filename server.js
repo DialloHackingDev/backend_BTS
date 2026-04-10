@@ -54,7 +54,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes avec rate limiting spécifique
 app.use('/auth', authLimiter, authRouter); // Limiter strict pour auth
 app.use('/goals', goalsRouter);
-app.use('/library', uploadLimiter, libraryRouter); // Limiter pour uploads
+app.use('/library', libraryRouter); // Limiter d'upload géré dans les routes spécifiques
 app.use('/conferences', conferenceRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/admin', adminRouter);
