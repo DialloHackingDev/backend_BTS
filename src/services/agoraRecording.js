@@ -128,10 +128,8 @@ class AgoraRecordingService {
           recordingConfig: {
             channelType: 0, // 0 = Communication, 1 = Live
             streamTypes: 2, // 0 = Audio only, 1 = Video only, 2 = Audio + Video
-            maxIdleTime: 30, // Arrêter après 30s d'inactivité
-            subscribeVideoUids: ['#allhosts'], // Enregistrer tous les participants
-            subscribeAudioUids: ['#allhosts'],
-            subscribeUidGroup: 0
+            maxIdleTime: 30 // Arrêter après 30s d'inactivité
+            // Pas de subscribeVideoUids/subscribeAudioUids = souscrire à tous automatiquement
           },
           recordingFileConfig: {
             avFileType: ['hls', 'mp4'] // Formats de sortie
