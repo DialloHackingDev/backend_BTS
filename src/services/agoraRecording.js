@@ -29,6 +29,14 @@ class AgoraRecordingService {
    */
   async startRecording(channelName, uid = 999999) {
     try {
+      // Vérifier la configuration
+      if (!this.isConfigured()) {
+        throw new Error('Configuration Agora incomplete. Verifier AGORA_APP_ID, AGORA_APP_CERTIFICATE, AGORA_CUSTOMER_ID, AGORA_CUSTOMER_SECRET');
+      }
+
+      console.log(`Démarrage enregistrement - Channel: ${channelName}, UID: ${uid}`);
+      console.log(`AppID: ${this.appId?.substring(0, 10)}... CustomerID: ${this.customerId?.substring(0, 10)}...`);
+
       // Étape 1: Acquérir un resourceId
       const resourceRes = await axios.post(
         `${this.baseUrl}/${this.appId}/cloud_recording/acquire`,
@@ -146,29 +154,18 @@ class AgoraRecordingService {
   }
 
   /**
-   * Configuration du stockage (Supabase S3 ou autre)
+   * Configuration du stockage Agora (Qiniu - stockage par défaut d'Agora)
+   * N'utilise PAS S3/Supabase pour éviter les erreurs de configuration
    */
   getStorageConfig() {
-    // Si Supabase Storage est configuré en S3
-    if (process.env.SUPABASE_S3_BUCKET && process.env.SUPABASE_S3_REGION) {
-      return {
-        vendor: 2, // 2 = AWS S3 (Supabase utilise S3)
-        region: process.env.SUPABASE_S3_REGION,
-        bucket: process.env.SUPABASE_S3_BUCKET,
-        accessKey: process.env.SUPABASE_S3_ACCESS_KEY,
-        secretKey: process.env.SUPABASE_S3_SECRET_KEY,
-        fileNamePrefix: ['recordings', new Date().toISOString().split('T')[0]]
-      };
-    }
-
-    // Par défaut, utiliser le stockage Agora (Qiniu)
+    // Utiliser uniquement le stockage Agora (Qiniu) - plus simple et intégré
     return {
       vendor: 0, // 0 = Qiniu (stockage Agora par défaut)
-      region: 0,
+      region: 0,  // 0 = Chine, 1 = US, 2 = Europe, etc.
       bucket: null,
       accessKey: null,
       secretKey: null,
-      fileNamePrefix: ['bts', 'recordings']
+      fileNamePrefix: ['bts', 'recordings', new Date().toISOString().split('T')[0]]
     };
   }
 

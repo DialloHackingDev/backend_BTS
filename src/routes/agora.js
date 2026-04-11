@@ -29,24 +29,26 @@ router.get('/status', (req, res) => {
  * POST /agora/recording/start
  */
 router.post('/recording/start', verifyToken, async (req, res) => {
-  const { conferenceId, channelName } = req.body;
-
-  if (!conferenceId || !channelName) {
-    return res.status(400).json({ error: 'conferenceId et channelName requis.' });
-  }
-
-  // Vérifier que l'enregistrement est configuré
-  if (!agoraRecording.isConfigured()) {
-    return res.status(503).json({
-      error: 'Enregistrement non configuré.',
-      message: 'AGORA_CUSTOMER_ID et AGORA_CUSTOMER_SECRET requis.'
-    });
-  }
-
   try {
+    const { conferenceId, channelName } = req.body;
+
+    if (!conferenceId || !channelName) {
+      return res.status(400).json({ error: 'conferenceId et channelName requis' });
+    }
+
+    // Vérifier si Agora est configuré
+    if (!agoraRecording.isConfigured()) {
+      return res.status(400).json({
+        error: 'Configuration Agora incomplète',
+        details: 'Les variables AGORA_CUSTOMER_ID et AGORA_CUSTOMER_SECRET sont requises pour le Cloud Recording'
+      });
+    }
+
+    console.log(`Démarrage enregistrement pour conférence ${conferenceId}, channel ${channelName}`);
+
     const recording = await agoraRecording.startRecording(channelName, 999999);
 
-    // Sauvegarder les infos dans la conférence
+    // Sauvegarder les infos d'enregistrement dans la conférence
     await prisma.conference.update({
       where: { id: parseInt(conferenceId) },
       data: {
