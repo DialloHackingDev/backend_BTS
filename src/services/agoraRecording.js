@@ -16,6 +16,43 @@ class AgoraRecordingService {
   }
 
   /**
+   * Configuration de l'enregistrement
+   */
+  getRecordingConfig() {
+    return {
+      maxIdleTime: 30,
+      streamTypes: 2,
+      channelType: 0,
+      videoStreamType: 0,
+      transcodingConfig: {
+        height: 640,
+        width: 360,
+        bitrate: 500,
+        fps: 15,
+        mixedVideoLayout: 1,
+        backgroundColor: "#000000"
+      },
+      subscribeVideoUids: ["#allhosts"],
+      subscribeAudioUids: ["#allhosts"],
+      subscribeUidGroup: 0
+    };
+  }
+
+  /**
+   * Configuration du fichier de sortie
+   */
+  getStorageConfig() {
+    return {
+      vendor: 0,
+      region: 0,
+      bucket: null,
+      accessKey: null,
+      secretKey: null,
+      fileNamePrefix: ["recordings", new Date().toISOString().split('T')[0]]
+    };
+  }
+
+  /**
    * Active le mode simulation pour les tests
    */
   enableSimulationMode() {
@@ -79,12 +116,17 @@ class AgoraRecordingService {
 
       const resourceId = resourceRes.data.resourceId;
 
-      // Étape 2: Démarrer l'enregistrement
+      // Étape 2: Générer un token pour l'enregistreur
+      const { generateAgoraToken } = require('../utils/agoraToken');
+      const recorderToken = generateAgoraToken(channelName, uid);
+      console.log(`Token enregistreur généré: ${recorderToken.substring(0, 20)}...`);
+
+      // Étape 3: Démarrer l'enregistrement
       const recordingConfig = {
         cname: channelName,
         uid: uid.toString(),
         clientRequest: {
-          token: null, // Mode APP ID sans token pour l'enregistreur
+          token: recorderToken, // Token valide pour l'enregistreur
           recordingConfig: {
             channelType: 0, // 0 = Communication, 1 = Live
             streamTypes: 2, // 0 = Audio only, 1 = Video only, 2 = Audio + Video
