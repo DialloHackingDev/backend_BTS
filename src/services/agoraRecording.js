@@ -31,10 +31,8 @@ class AgoraRecordingService {
         fps: 15,
         mixedVideoLayout: 1,
         backgroundColor: "#000000"
-      },
-      subscribeVideoUids: ["#allhosts"],
-      subscribeAudioUids: ["#allhosts"],
-      subscribeUidGroup: 0
+      }
+      // Pas de subscribeVideoUids/subscribeAudioUids = souscrire à tous automatiquement
     };
   }
 
