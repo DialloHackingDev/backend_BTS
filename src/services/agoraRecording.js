@@ -237,17 +237,17 @@ class AgoraRecordingService {
   }
 
   /**
-   * Configuration du stockage Agora (Qiniu - stockage par défaut d'Agora)
-   * N'utilise PAS S3/Supabase pour éviter les erreurs de configuration
+   * Configuration du stockage pour Agora Cloud Recording
+   * Utilise AWS S3 (vendor: 1) avec Supabase Storage
    */
   getStorageConfig() {
-    // Utiliser uniquement le stockage Agora (Qiniu) - plus simple et intégré
+    // Configuration AWS S3 pour Supabase Storage
     return {
-      vendor: 0, // 0 = Qiniu (stockage Agora par défaut)
-      region: 0,  // 0 = Chine, 1 = US, 2 = Europe, etc.
-      bucket: null,
-      accessKey: null,
-      secretKey: null,
+      vendor: 1, // 1 = AWS S3
+      region: 1, // 1 = US East (N. Virginia) - région de Supabase
+      bucket: process.env.SUPABASE_S3_BUCKET || 'bts-recordings',
+      accessKey: process.env.SUPABASE_S3_ACCESS_KEY || '',
+      secretKey: process.env.SUPABASE_S3_SECRET_KEY || '',
       fileNamePrefix: ['bts', 'recordings', new Date().toISOString().split('T')[0]]
     };
   }
