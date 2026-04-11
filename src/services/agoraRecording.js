@@ -11,6 +11,16 @@ class AgoraRecordingService {
     this.customerId = process.env.AGORA_CUSTOMER_ID;
     this.customerSecret = process.env.AGORA_CUSTOMER_SECRET;
     this.baseUrl = 'https://api.agora.io/v1/apps';
+    // Mode simulation pour tester sans l'API Agora (désactivé par défaut)
+    this.simulationMode = process.env.AGORA_SIMULATION_MODE === 'true';
+  }
+
+  /**
+   * Active le mode simulation pour les tests
+   */
+  enableSimulationMode() {
+    this.simulationMode = true;
+    console.log('🎬 Mode simulation activé pour les enregistrements');
   }
 
   /**
@@ -28,6 +38,17 @@ class AgoraRecordingService {
    * @returns {Promise<{resourceId: string, sid: string}>}
    */
   async startRecording(channelName, uid = 999999) {
+    // Mode simulation pour tester sans l'API Agora
+    if (this.simulationMode) {
+      console.log(`🎬 [SIMULATION] Démarrage enregistrement - Channel: ${channelName}`);
+      return {
+        resourceId: `sim-resource-${Date.now()}`,
+        sid: `sim-sid-${Date.now()}`,
+        uid: uid,
+        simulated: true
+      };
+    }
+
     try {
       // Vérifier la configuration
       if (!this.isConfigured()) {
@@ -96,8 +117,32 @@ class AgoraRecordingService {
         uid: uid
       };
     } catch (error) {
-      console.error('Erreur démarrage enregistrement Agora:', error.response?.data || error.message);
-      throw error;
+      const errorDetails = error.response?.data || error.message;
+      const status = error.response?.status;
+
+      console.error('=== ERREUR AGORA CLOUD RECORDING ===');
+      console.error('Status:', status);
+      console.error('Data:', JSON.stringify(errorDetails, null, 2));
+      console.error('Message:', error.message);
+      console.error('=====================================');
+
+      // Fallback automatique en mode simulation si erreur 400/401 (permissions/quota)
+      if ((status === 400 || status === 401) && process.env.AGORA_AUTO_SIMULATION === 'true') {
+        console.log('🔄 Fallback automatique en mode simulation');
+        return {
+          resourceId: `fallback-sim-${Date.now()}`,
+          sid: `fallback-sid-${Date.now()}`,
+          uid: uid,
+          simulated: true,
+          fallbackReason: errorDetails?.message || 'API Agora non disponible'
+        };
+      }
+
+      // Créer une erreur enrichie avec les détails
+      const enrichedError = new Error(errorDetails?.message || error.message);
+      enrichedError.status = status;
+      enrichedError.agoraData = errorDetails;
+      throw enrichedError;
     }
   }
 

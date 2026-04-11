@@ -67,9 +67,12 @@ router.post('/recording/start', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur démarrage enregistrement:', error);
-    res.status(500).json({
+    // Déterminer le statut HTTP (peut être 400 ou 500)
+    const statusCode = error.status || 500;
+    res.status(statusCode).json({
       error: 'Erreur démarrage enregistrement',
-      details: error.message
+      details: error.message,
+      agoraError: error.agoraData || null
     });
   }
 });
