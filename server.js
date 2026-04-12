@@ -32,6 +32,9 @@ const notificationsRouter = require('./src/routes/notifications');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy pour Render (corrige le warning express-rate-limit)
+app.set('trust proxy', 1);
+
 // Security middlewares
 app.use(helmetConfig); // Headers sécurisés
 app.use(cors());
