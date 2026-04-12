@@ -172,7 +172,11 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
     const bucketName = process.env.SUPABASE_S3_BUCKET || 'recordings';
     let videoUrl = null;
     
-    if (fileName && fileName.startsWith('http')) {
+    // En mode simulation, ne pas créer de faux lien vidéo
+    if (result.simulated) {
+      console.log('🎬 Mode simulation: pas de videoUrl (fichier simulé)');
+      videoUrl = null;
+    } else if (fileName && fileName.startsWith('http')) {
       // Si Agora retourne déjà une URL complète (mode S3)
       videoUrl = fileName;
     } else if (fileName) {
