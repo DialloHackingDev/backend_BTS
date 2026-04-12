@@ -222,6 +222,22 @@ class AgoraRecordingService {
    * @returns {Promise<{serverResponse: object, fileList: array}>}
    */
   async stopRecording(channelName, resourceId, sid, uid = 999999) {
+    // Mode simulation - retourner une réponse simulée sans appeler l'API
+    if (this.simulationMode || resourceId?.startsWith('sim-') || sid?.startsWith('sim-')) {
+      console.log(`🎬 [SIMULATION] Arrêt enregistrement - Channel: ${channelName}`);
+      return {
+        serverResponse: {
+          fileList: [{
+            fileName: `simulation-recording-${Date.now()}.mp4`,
+            trackType: 'audio_and_video',
+            uid: uid.toString()
+          }],
+          uploadingStatus: 'uploaded'
+        },
+        simulated: true
+      };
+    }
+    
     try {
       const response = await axios.post(
         `${this.baseUrl}/${this.appId}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/stop`,

@@ -135,16 +135,19 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
       conference.recordingUid
     );
 
-    // Si l'enregistrement était déjà arrêté (worker crashed/auto-stop)
+    // Si l'enregistrement était déjà arrêté ou est en mode simulation
     if (result.alreadyStopped) {
       console.log('⚠️ Enregistrement déjà arrêté automatiquement');
+    }
+    if (result.simulated) {
+      console.log('🎬 Mode simulation: enregistrement simulé');
     }
     
     // Essayer de récupérer les fichiers via query API (important en mode sans S3)
     let fileList = result.serverResponse?.fileList || [];
     
-    // Si pas de fichiers dans la réponse stop, essayer l'API query
-    if (fileList.length === 0 && !result.alreadyStopped) {
+    // Si pas de fichiers dans la réponse stop et pas en mode simulation, essayer l'API query
+    if (fileList.length === 0 && !result.alreadyStopped && !result.simulated) {
       try {
         console.log('🔍 Récupération des fichiers via API query...');
         await new Promise(resolve => setTimeout(resolve, 3000)); // Attendre 3s pour que les fichiers soient prêts
@@ -206,14 +209,21 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
       }
     }
 
+    // Déterminer le message en fonction du contexte
+    let message = 'Enregistrement arrêté';
+    if (result.alreadyStopped) {
+      message = 'Enregistrement déjà arrêté (terminé automatiquement)';
+    } else if (result.simulated) {
+      message = 'Enregistrement simulé (pas de fichier vidéo réel)';
+    }
+    
     res.json({
       success: true,
-      message: result.alreadyStopped 
-        ? 'Enregistrement déjà arrêté (terminé automatiquement)' 
-        : 'Enregistrement arrêté',
+      message: message,
       videoUrl: videoUrl,
       fileList: fileList,
-      alreadyStopped: result.alreadyStopped || false
+      alreadyStopped: result.alreadyStopped || false,
+      simulated: result.simulated || false
     });
   } catch (error) {
     console.error('Erreur arrêt enregistrement:', error);
