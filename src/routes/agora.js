@@ -108,7 +108,14 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
 
     // Extraire l'URL de la vidéo depuis la réponse
     const fileList = result.serverResponse?.fileList || [];
-    const videoUrl = fileList.length > 0 ? fileList[0].fileName : null;
+    const fileName = fileList.length > 0 ? fileList[0].fileName : null;
+    
+    // Construire l'URL complète Supabase Storage
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const bucketName = process.env.SUPABASE_S3_BUCKET || 'recordings';
+    const videoUrl = fileName 
+      ? `${supabaseUrl}/storage/v1/object/public/${bucketName}/${fileName}`
+      : null;
 
     // Mettre à jour la conférence
     await prisma.conference.update({
@@ -116,9 +123,29 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
       data: {
         isRecording: false,
         videoUrl: videoUrl,
-        recordingStoppedAt: new Date()
+        recordingStoppedAt: new Date(),
+        status: 'ENDED'
       }
     });
+
+    // Ajouter la vidéo à la bibliothèque
+    if (videoUrl) {
+      try {
+        await prisma.libraryItem.create({
+          data: {
+            title: `Enregistrement - ${conference.title || 'Conférence'}`,
+            type: 'VIDEO',
+            url: videoUrl,
+            description: `Enregistrement de la conférence du ${new Date().toLocaleDateString()}`,
+            category: 'Conférences',
+            uploadedBy: conference.userId
+          }
+        });
+        console.log('📚 Vidéo ajoutée à la bibliothèque');
+      } catch (libError) {
+        console.error('Erreur ajout bibliothèque:', libError);
+      }
+    }
 
     res.json({
       success: true,

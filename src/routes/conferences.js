@@ -41,34 +41,34 @@ router.get('/history', verifyToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    let dateFilter = {};
 
-    console.log(`[Conferences] Fetching history with filter: ${filter}, page: ${page}`);
+    // Filtre: uniquement les conférences terminées avec une vidéo
+    let whereClause = {
+      endedAt: { not: null },
+      videoUrl: { not: null }
+    };
 
     if (filter === 'week') {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      dateFilter = { createdAt: { gte: weekAgo } };
+      whereClause.createdAt = { gte: weekAgo };
     } else if (filter === 'month') {
       const monthAgo = new Date();
       monthAgo.setMonth(monthAgo.getMonth() - 1);
-      dateFilter = { createdAt: { gte: monthAgo } };
+      whereClause.createdAt = { gte: monthAgo };
     }
-
-    console.log(`[Conferences] Date filter:`, dateFilter);
 
     const [conferences, total] = await Promise.all([
       prisma.conference.findMany({
-        where: dateFilter,
+        where: whereClause,
         include: { user: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.conference.count({ where: dateFilter })
+      prisma.conference.count({ where: whereClause }),
     ]);
 
-    console.log(`[Conferences] Found ${conferences.length} conferences, total: ${total}`);
     res.json({ data: conferences, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     console.error(`[Conferences] Error fetching history:`, error);
