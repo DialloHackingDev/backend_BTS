@@ -37,15 +37,27 @@ class AgoraRecordingService {
   }
 
   /**
-   * Configuration du fichier de sortie
+   * Configuration du fichier de sortie vers Supabase S3
    */
   getStorageConfig() {
+    // Utiliser Supabase S3 comme stockage compatible AWS
+    const bucket = process.env.SUPABASE_S3_BUCKET || 'recordings';
+    const accessKey = process.env.SUPABASE_S3_ACCESS_KEY;
+    const secretKey = process.env.SUPABASE_S3_SECRET_KEY;
+    
+    // Si les credentials S3 ne sont pas configurés, retourner null pour désactiver le stockage cloud
+    // Agora retournera alors les fichiers via l'API query (mode sans stockage persistant)
+    if (!accessKey || !secretKey) {
+      console.log('⚠️ Credentials S3 manquants - enregistrement sans stockage cloud activé');
+      return null;
+    }
+    
     return {
-      vendor: 0,
-      region: 0,
-      bucket: null,
-      accessKey: null,
-      secretKey: null,
+      vendor: 2, // 2 = AWS S3 (compatible avec Supabase)
+      region: 0, // 0 = US East (N. Virginia) - région par défaut
+      bucket: bucket,
+      accessKey: accessKey,
+      secretKey: secretKey,
       fileNamePrefix: ["recordings", new Date().toISOString().split('T')[0]]
     };
   }
@@ -221,25 +233,21 @@ class AgoraRecordingService {
    */
   async queryRecording(resourceId, sid) {
     try {
-    // Validation des credentials
-    if (!bucket || !accessKey || !secretKey) {
-      console.error('❌ Credentials S3 manquants:', {
-        bucket: !!bucket,
-        accessKey: !!accessKey,
-        secretKey: !!secretKey
-      });
-      throw new Error('Configuration S3 incomplète. Vérifiez SUPABASE_S3_BUCKET, SUPABASE_S3_ACCESS_KEY, SUPABASE_S3_SECRET_KEY');
+      const response = await axios.get(
+        `${this.baseUrl}/${this.appId}/cloud_recording/resourceid/${resourceId}/sid/${sid}/query`,
+        {
+          headers: {
+            'Authorization': this.getCredentials(),
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Erreur query recording:', error.response?.data || error.message);
+      throw error;
     }
-    
-    // Configuration AWS S3 pour Supabase Storage
-    return {
-      vendor: 1, // 1 = AWS S3
-      region: 1, // 1 = US East (N. Virginia)
-      bucket: bucket,
-      accessKey: accessKey,
-      secretKey: secretKey,
-      fileNamePrefix: ['bts', 'recordings', new Date().toISOString().split('T')[0]]
-    };
   }
 
   /**
