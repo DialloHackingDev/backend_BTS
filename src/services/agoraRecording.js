@@ -221,33 +221,23 @@ class AgoraRecordingService {
    */
   async queryRecording(resourceId, sid) {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/${this.appId}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/query`,
-        {
-          headers: {
-            'Authorization': this.getCredentials()
-          }
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Erreur query enregistrement:', error.response?.data || error.message);
-      throw error;
+    // Validation des credentials
+    if (!bucket || !accessKey || !secretKey) {
+      console.error('❌ Credentials S3 manquants:', {
+        bucket: !!bucket,
+        accessKey: !!accessKey,
+        secretKey: !!secretKey
+      });
+      throw new Error('Configuration S3 incomplète. Vérifiez SUPABASE_S3_BUCKET, SUPABASE_S3_ACCESS_KEY, SUPABASE_S3_SECRET_KEY');
     }
-  }
-
-  /**
-   * Configuration du stockage pour Agora Cloud Recording
-   * Utilise AWS S3 (vendor: 1) avec Supabase Storage
-   */
-  getStorageConfig() {
+    
     // Configuration AWS S3 pour Supabase Storage
     return {
       vendor: 1, // 1 = AWS S3
-      region: 1, // 1 = US East (N. Virginia) - région de Supabase
-      bucket: process.env.SUPABASE_S3_BUCKET || 'bts-recordings',
-      accessKey: process.env.SUPABASE_S3_ACCESS_KEY || '',
-      secretKey: process.env.SUPABASE_S3_SECRET_KEY || '',
+      region: 1, // 1 = US East (N. Virginia)
+      bucket: bucket,
+      accessKey: accessKey,
+      secretKey: secretKey,
       fileNamePrefix: ['bts', 'recordings', new Date().toISOString().split('T')[0]]
     };
   }
