@@ -14,7 +14,7 @@ exports.getStats = async (req, res) => {
       prisma.user.count(),
       prisma.library.count(),
       prisma.conference.count(),
-      prisma.conference.count({ where: { status: 'ACTIVE' } }),
+      prisma.conference.count({ where: { endedAt: null } }), // Conférences non terminées = actives
     ]);
     
     // Calcul de la croissance des utilisateurs
