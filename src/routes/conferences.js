@@ -42,21 +42,12 @@ router.get('/history', verifyToken, async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Filtre: uniquement les conférences terminées avec une vidéo
-    let whereClause = {
-      endedAt: { not: null },
-      videoUrl: { not: null }
-    };
+    console.log(`[Conferences] Fetching history with filter: ${filter}, page: ${page}`);
 
-    if (filter === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      whereClause.createdAt = { gte: weekAgo };
-    } else if (filter === 'month') {
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      whereClause.createdAt = { gte: monthAgo };
-    }
+    // Filtre: toutes les conférences terminées
+    let whereClause = {
+      endedAt: { not: null }
+    };
 
     const [conferences, total] = await Promise.all([
       prisma.conference.findMany({
@@ -72,7 +63,7 @@ router.get('/history', verifyToken, async (req, res) => {
     res.json({ data: conferences, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     console.error(`[Conferences] Error fetching history:`, error);
-    res.status(500).json({ error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -87,7 +78,8 @@ router.put('/:id/end', verifyToken, async (req, res) => {
       data: {
         videoUrl: videoUrl || null,
         endedAt: new Date(),
-      }
+      },
+      include: { user: { select: { name: true } } }
     });
 
     // Si un lien vidéo est fourni, l'ajouter à la bibliothèque
