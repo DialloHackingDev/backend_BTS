@@ -219,6 +219,8 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
       message = 'Enregistrement déjà arrêté (terminé automatiquement)';
     } else if (result.simulated) {
       message = 'Enregistrement simulé (pas de fichier vidéo réel)';
+    } else if (!videoUrl) {
+      message = 'Enregistrement terminé mais vidéo temporaire (récupérable via console Agora dans les 7 jours)';
     }
     
     res.json({
