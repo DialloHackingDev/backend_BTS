@@ -191,14 +191,13 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
     // Ajouter la vidéo à la bibliothèque
     if (videoUrl) {
       try {
-        await prisma.libraryItem.create({
+        await prisma.library.create({
           data: {
             title: `Enregistrement - ${conference.title || 'Conférence'}`,
-            type: 'VIDEO',
+            type: 'video',
             url: videoUrl,
             description: `Enregistrement de la conférence du ${new Date().toLocaleDateString()}`,
-            category: 'Conférences',
-            uploadedBy: conference.userId
+            category: 'Conférences'
           }
         });
         console.log('📚 Vidéo ajoutée à la bibliothèque');
