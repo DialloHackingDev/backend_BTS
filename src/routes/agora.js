@@ -44,9 +44,37 @@ router.post('/recording/start', verifyToken, async (req, res) => {
       });
     }
 
+    // Vérifier si un enregistrement est déjà en cours pour cette conférence
+    const existingConference = await prisma.conference.findUnique({
+      where: { id: parseInt(conferenceId) },
+      select: { isRecording: true, recordingResourceId: true, recordingSid: true }
+    });
+    
+    if (existingConference?.isRecording) {
+      console.log(`⚠️ Enregistrement déjà en cours pour conférence ${conferenceId}, tentative d'arrêt...`);
+      try {
+        // Essayer d'arrêter l'ancien enregistrement
+        await agoraRecording.stopRecording(
+          channelName,
+          existingConference.recordingResourceId,
+          existingConference.recordingSid,
+          999999
+        );
+        console.log('✅ Ancien enregistrement arrêté');
+        // Attendre un peu pour que Agora libère le canal
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (stopError) {
+        console.log('⚠️ Impossible d\'arrêter l\'ancien enregistrement:', stopError.message);
+        // Continuer quand même, on va essayer avec un nouvel UID
+      }
+    }
+    
     console.log(`Démarrage enregistrement pour conférence ${conferenceId}, channel ${channelName}`);
-
-    const recording = await agoraRecording.startRecording(channelName, 999999);
+    
+    // Générer un UID unique pour éviter les conflits (entre 100000 et 999999)
+    const recordingUid = Math.floor(Math.random() * 900000) + 100000;
+    
+    const recording = await agoraRecording.startRecording(channelName, recordingUid);
 
     // Sauvegarder les infos d'enregistrement dans la conférence
     await prisma.conference.update({
@@ -54,7 +82,7 @@ router.post('/recording/start', verifyToken, async (req, res) => {
       data: {
         recordingResourceId: recording.resourceId,
         recordingSid: recording.sid,
-        recordingUid: recording.uid,
+        recordingUid: recordingUid, // Utiliser l'UID généré
         isRecording: true
       }
     });
@@ -63,7 +91,8 @@ router.post('/recording/start', verifyToken, async (req, res) => {
       success: true,
       message: 'Enregistrement démarré',
       resourceId: recording.resourceId,
-      sid: recording.sid
+      sid: recording.sid,
+      uid: recordingUid
     });
   } catch (error) {
     console.error('Erreur démarrage enregistrement:', error);
