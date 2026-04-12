@@ -12,7 +12,7 @@ class AgoraRecordingService {
     this.customerSecret = process.env.AGORA_CUSTOMER_SECRET;
     this.baseUrl = 'https://api.agora.io/v1/apps';
     // Mode simulation pour tester sans l'API Agora
-    this.simulationMode = true; // TEMPORAIRE: Activer pour tester
+    this.simulationMode = false; // Désactivé: utiliser l'API Agora réelle
   }
 
   /**
