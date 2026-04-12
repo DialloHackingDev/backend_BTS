@@ -44,17 +44,19 @@ class AgoraRecordingService {
    * pour utiliser le mode "query" d'Agora (récupération manuelle via API).
    */
   getStorageConfig() {
-    // Désactivé temporairement - Supabase S3 n'est pas compatible avec Agora
-    // Pour activer, configurez un vrai bucket AWS S3 avec les variables:
-    // AWS_S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+    // OPTION 1: Mode query sans S3 (temporaire Agora uniquement)
+    // Les vidéos sont stockées 7 jours chez Agora, récupérables via console web
+    // Désactivé jusqu'à configuration d'un vrai AWS S3
+    console.log('📦 Mode query activé (sans stockage S3). Les vidéos temporaires seront récupérables via console Agora.');
+    return null;
     
-    const bucket = process.env.AWS_S3_BUCKET || process.env.SUPABASE_S3_BUCKET;
-    const accessKey = process.env.AWS_ACCESS_KEY_ID || process.env.SUPABASE_S3_ACCESS_KEY;
-    const secretKey = process.env.AWS_SECRET_ACCESS_KEY || process.env.SUPABASE_S3_SECRET_KEY;
+    /* Pour activer AWS S3, décommentez ci-dessous et configurez:
+    const bucket = process.env.AWS_S3_BUCKET;
+    const accessKey = process.env.AWS_ACCESS_KEY_ID;
+    const secretKey = process.env.AWS_SECRET_ACCESS_KEY;
     
-    // Si AWS S3 n'est pas configuré, retourner null pour le mode query
     if (!accessKey || !secretKey || !bucket) {
-      console.log('📦 Mode query activé (sans stockage S3). Les vidéos seront récupérables via API query.');
+      console.log('📦 Mode query activé (sans stockage S3)');
       return null;
     }
     
@@ -68,6 +70,7 @@ class AgoraRecordingService {
       secretKey: secretKey,
       fileNamePrefix: ["recordings", new Date().toISOString().split('T')[0]]
     };
+    */
   }
 
   /**
