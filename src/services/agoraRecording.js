@@ -37,24 +37,32 @@ class AgoraRecordingService {
   }
 
   /**
-   * Configuration du fichier de sortie vers Supabase S3
+   * Configuration du fichier de sortie vers S3
+   * 
+   * NOTE: Supabase Storage S3-compatible ne fonctionne pas directement avec Agora Cloud Recording.
+   * Pour que l'enregistrement fonctionne, utilisez un vrai bucket AWS S3 ou laissez null
+   * pour utiliser le mode "query" d'Agora (récupération manuelle via API).
    */
   getStorageConfig() {
-    // Utiliser Supabase S3 comme stockage compatible AWS
-    const bucket = process.env.SUPABASE_S3_BUCKET || 'recordings';
-    const accessKey = process.env.SUPABASE_S3_ACCESS_KEY;
-    const secretKey = process.env.SUPABASE_S3_SECRET_KEY;
+    // Désactivé temporairement - Supabase S3 n'est pas compatible avec Agora
+    // Pour activer, configurez un vrai bucket AWS S3 avec les variables:
+    // AWS_S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
     
-    // Si les credentials S3 ne sont pas configurés, retourner null pour désactiver le stockage cloud
-    // Agora retournera alors les fichiers via l'API query (mode sans stockage persistant)
-    if (!accessKey || !secretKey) {
-      console.log('⚠️ Credentials S3 manquants - enregistrement sans stockage cloud activé');
+    const bucket = process.env.AWS_S3_BUCKET || process.env.SUPABASE_S3_BUCKET;
+    const accessKey = process.env.AWS_ACCESS_KEY_ID || process.env.SUPABASE_S3_ACCESS_KEY;
+    const secretKey = process.env.AWS_SECRET_ACCESS_KEY || process.env.SUPABASE_S3_SECRET_KEY;
+    
+    // Si AWS S3 n'est pas configuré, retourner null pour le mode query
+    if (!accessKey || !secretKey || !bucket) {
+      console.log('📦 Mode query activé (sans stockage S3). Les vidéos seront récupérables via API query.');
       return null;
     }
     
+    console.log(`📦 Stockage S3 configuré: ${bucket}`);
+    
     return {
-      vendor: 2, // 2 = AWS S3 (compatible avec Supabase)
-      region: 0, // 0 = US East (N. Virginia) - région par défaut
+      vendor: 1, // 1 = AWS S3
+      region: 0, // 0 = US East (N. Virginia)
       bucket: bucket,
       accessKey: accessKey,
       secretKey: secretKey,

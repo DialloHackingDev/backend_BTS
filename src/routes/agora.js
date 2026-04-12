@@ -135,21 +135,48 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
       conference.recordingUid
     );
 
-    // Extraire l'URL de la vidéo depuis la réponse
-    const fileList = result.serverResponse?.fileList || [];
-    const fileName = fileList.length > 0 ? fileList[0].fileName : null;
-    
     // Si l'enregistrement était déjà arrêté (worker crashed/auto-stop)
     if (result.alreadyStopped) {
       console.log('⚠️ Enregistrement déjà arrêté automatiquement');
     }
     
-    // Construire l'URL complète Supabase Storage
+    // Essayer de récupérer les fichiers via query API (important en mode sans S3)
+    let fileList = result.serverResponse?.fileList || [];
+    
+    // Si pas de fichiers dans la réponse stop, essayer l'API query
+    if (fileList.length === 0 && !result.alreadyStopped) {
+      try {
+        console.log('🔍 Récupération des fichiers via API query...');
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Attendre 3s pour que les fichiers soient prêts
+        
+        const queryResult = await agoraRecording.queryRecording(
+          conference.recordingResourceId,
+          conference.recordingSid
+        );
+        
+        fileList = queryResult.serverResponse?.fileList || [];
+        console.log(`📁 ${fileList.length} fichier(s) trouvé(s) via query`);
+      } catch (queryError) {
+        console.log('⚠️ Impossible de récupérer les fichiers via query:', queryError.message);
+      }
+    }
+    
+    const fileName = fileList.length > 0 ? fileList[0].fileName : null;
+    
+    // Construire l'URL complète Supabase Storage (si S3 configuré)
+    // Sinon, stocker les infos pour récupération manuelle
     const supabaseUrl = process.env.SUPABASE_URL;
     const bucketName = process.env.SUPABASE_S3_BUCKET || 'recordings';
-    const videoUrl = fileName 
-      ? `${supabaseUrl}/storage/v1/object/public/${bucketName}/${fileName}`
-      : null;
+    let videoUrl = null;
+    
+    if (fileName && fileName.startsWith('http')) {
+      // Si Agora retourne déjà une URL complète (mode S3)
+      videoUrl = fileName;
+    } else if (fileName) {
+      // Mode S3 activé avec nom de fichier
+      videoUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${fileName}`;
+    }
+    // Si pas de fileName, videoUrl reste null (mode query sans S3)
 
     // Mettre à jour la conférence
     await prisma.conference.update({
@@ -157,8 +184,7 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
       data: {
         isRecording: false,
         videoUrl: videoUrl,
-        recordingStoppedAt: new Date(),
-        status: 'ENDED'
+        recordingStoppedAt: new Date()
       }
     });
 
