@@ -110,6 +110,11 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
     const fileList = result.serverResponse?.fileList || [];
     const fileName = fileList.length > 0 ? fileList[0].fileName : null;
     
+    // Si l'enregistrement était déjà arrêté (worker crashed/auto-stop)
+    if (result.alreadyStopped) {
+      console.log('⚠️ Enregistrement déjà arrêté automatiquement');
+    }
+    
     // Construire l'URL complète Supabase Storage
     const supabaseUrl = process.env.SUPABASE_URL;
     const bucketName = process.env.SUPABASE_S3_BUCKET || 'recordings';
@@ -149,9 +154,12 @@ router.post('/recording/stop', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Enregistrement arrêté',
+      message: result.alreadyStopped 
+        ? 'Enregistrement déjà arrêté (terminé automatiquement)' 
+        : 'Enregistrement arrêté',
       videoUrl: videoUrl,
-      fileList: fileList
+      fileList: fileList,
+      alreadyStopped: result.alreadyStopped || false
     });
   } catch (error) {
     console.error('Erreur arrêt enregistrement:', error);

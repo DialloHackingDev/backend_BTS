@@ -132,22 +132,31 @@ class AgoraRecordingService {
       console.log(`Token enregistreur généré: ${recorderToken.substring(0, 20)}...`);
 
       // Étape 3: Démarrer l'enregistrement
+      const storageConfig = this.getStorageConfig();
+      console.log(`📦 Configuration S3: ${storageConfig ? 'Activée' : 'Désactivée'}`);
+      
+      const clientRequest = {
+        token: recorderToken, // Token valide pour l'enregistreur
+        recordingConfig: {
+          channelType: 0, // 0 = Communication, 1 = Live
+          streamTypes: 2, // 0 = Audio only, 1 = Video only, 2 = Audio + Video
+          maxIdleTime: 30 // Arrêter après 30s d'inactivité
+          // Pas de subscribeVideoUids/subscribeAudioUids = souscrire à tous automatiquement
+        }
+      };
+      
+      // Ajouter la configuration de stockage seulement si configuré
+      if (storageConfig) {
+        clientRequest.recordingFileConfig = {
+          avFileType: ['hls', 'mp4'] // Formats de sortie
+        };
+        clientRequest.storageConfig = storageConfig;
+      }
+      
       const recordingConfig = {
         cname: channelName,
         uid: uid.toString(),
-        clientRequest: {
-          token: recorderToken, // Token valide pour l'enregistreur
-          recordingConfig: {
-            channelType: 0, // 0 = Communication, 1 = Live
-            streamTypes: 2, // 0 = Audio only, 1 = Video only, 2 = Audio + Video
-            maxIdleTime: 30 // Arrêter après 30s d'inactivité
-            // Pas de subscribeVideoUids/subscribeAudioUids = souscrire à tous automatiquement
-          },
-          recordingFileConfig: {
-            avFileType: ['hls', 'mp4'] // Formats de sortie
-          },
-          storageConfig: this.getStorageConfig()
-        }
+        clientRequest
       };
 
       const startRes = await axios.post(
@@ -223,7 +232,23 @@ class AgoraRecordingService {
 
       return response.data;
     } catch (error) {
-      console.error('Erreur arrêt enregistrement Agora:', error.response?.data || error.message);
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.reason || error.message;
+      const statusCode = error.response?.status;
+      
+      // Erreur 404 "failed to find worker" = le worker s'est déjà arrêté automatiquement
+      if (statusCode === 404 && errorMessage?.includes('failed to find worker')) {
+        console.log('⚠️ Worker déjà arrêté (enregistrement terminé automatiquement)');
+        return {
+          serverResponse: {
+            fileList: [],
+            status: 'already stopped'
+          },
+          alreadyStopped: true
+        };
+      }
+      
+      console.error('Erreur arrêt enregistrement Agora:', errorData || error.message);
       throw error;
     }
   }
