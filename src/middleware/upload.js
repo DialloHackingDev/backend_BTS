@@ -12,7 +12,7 @@ const fileFilter = (req, file, cb) => {
     'video/mp4',
     'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'
   ];
-  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf', '.mp3', '.wav', '.mp4'];
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf', '.mp3', '.wav', '.mp4', '.m4a'];
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (allowedTypes.includes(file.mimetype) || allowedExts.includes(ext)) {
